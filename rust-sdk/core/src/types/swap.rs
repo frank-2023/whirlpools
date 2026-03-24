@@ -20,7 +20,7 @@ pub struct ExactInSwapQuote {
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Default)]
 #[cfg_attr(feature = "wasm", wasm_expose)]
 
-pub struct ExactInSwapQuoteSimulate<const SIZE: usize> {
+pub struct ExactInSwapQuoteSimulate {
     pub token_in: u64,
     pub token_est_out: u64,
     pub token_min_out: u64,

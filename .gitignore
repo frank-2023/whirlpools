@@ -1,1 +1,3 @@
 /target/
+/rust-sdk/whirlpool/target/
+/rust-sdk/core/target/

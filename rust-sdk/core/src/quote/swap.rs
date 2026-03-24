@@ -380,7 +380,7 @@ pub fn compute_swap<const SIZE: usize>(
 /// # Returns
 /// Swap result and updated whirlpool and tick sequence
 ///
-pub struct SwapResultWithState<const SIZE: usize> {
+pub struct SwapResultWithState {
     pub token_a: u64,
     pub token_b: u64,
     pub trade_fee: u64,
@@ -393,7 +393,7 @@ pub struct SwapResultWithState<const SIZE: usize> {
 
 #[allow(clippy::too_many_arguments)]
 #[cfg_attr(feature = "wasm", wasm_expose)]
-pub fn swap_quote_by_input_token_simulate<const SIZE: usize>(
+pub fn swap_quote_by_input_token_simulate(
     token_in: u64,
     specified_token_a: bool,
     slippage_tolerance_bps: u16,
@@ -403,7 +403,7 @@ pub fn swap_quote_by_input_token_simulate<const SIZE: usize>(
     timestamp: u64,
     transfer_fee_a: Option<TransferFee>,
     transfer_fee_b: Option<TransferFee>,
-) -> Result<ExactInSwapQuoteSimulate<SIZE>, CoreError> {
+) -> Result<ExactInSwapQuoteSimulate, CoreError> {
     let (transfer_fee_in, transfer_fee_out) = if specified_token_a {
         (transfer_fee_a, transfer_fee_b)
     } else {
@@ -462,7 +462,7 @@ pub fn compute_swap_with_state<const SIZE: usize>(
     specified_input: bool,
     timestamp: u64,
     adaptive_fee_info: Option<AdaptiveFeeInfo>,
-) -> Result<SwapResultWithState<SIZE>, CoreError> {
+) -> Result<SwapResultWithState, CoreError> {
     let mut update_whirlpool = whirlpool.clone();
     let sqrt_price_limit = if sqrt_price_limit == 0 {
         if a_to_b {
