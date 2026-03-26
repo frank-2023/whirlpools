@@ -403,6 +403,7 @@ pub fn swap_quote_by_input_token_simulate(
     timestamp: u64,
     transfer_fee_a: Option<TransferFee>,
     transfer_fee_b: Option<TransferFee>,
+    sqrt_price_limit: u128
 ) -> Result<ExactInSwapQuoteSimulate, CoreError> {
     let (transfer_fee_in, transfer_fee_out) = if specified_token_a {
         (transfer_fee_a, transfer_fee_b)
@@ -416,7 +417,7 @@ pub fn swap_quote_by_input_token_simulate(
 
     let swap_result = compute_swap_with_state(
         token_in_after_fee.into(),
-        0,
+        sqrt_price_limit,
         whirlpool,
         tick_sequence,
         specified_token_a,
@@ -587,7 +588,8 @@ pub fn compute_swap_with_state<const SIZE: usize>(
             }
 
             current_sqrt_price = step_quote.next_sqrt_price;
-
+            
+            
             if !adaptive_fee_update_skipped {
                 fee_rate_manager.advance_tick_group();
             } else {
