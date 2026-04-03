@@ -1,4 +1,4 @@
-use crate::{sqrt_price_to_tick_index, tick_index_to_sqrt_price, try_apply_swap_fee, try_apply_transfer_fee, try_get_amount_delta_a, try_get_amount_delta_b, try_get_max_amount_with_slippage_tolerance, try_get_min_amount_with_slippage_tolerance, try_get_next_sqrt_price_from_a, try_get_next_sqrt_price_from_b, try_reverse_apply_swap_fee, try_reverse_apply_transfer_fee, AdaptiveFeeInfo, CoreError, ExactInSwapQuote, ExactInSwapQuoteSimulate, ExactOutSwapQuote, FeeRateManager, OracleFacade, TickArraySequence, TickArrays, TickFacade, TransferFee, WhirlpoolFacade, AMOUNT_EXCEEDS_MAX_U64, ARITHMETIC_OVERFLOW, INVALID_ADAPTIVE_FEE_INFO, INVALID_SQRT_PRICE_LIMIT_DIRECTION, MAX_SQRT_PRICE, MIN_SQRT_PRICE, SQRT_PRICE_LIMIT_OUT_OF_BOUNDS, ZERO_TRADABLE_AMOUNT};
+use crate::{sqrt_price_to_tick_index, tick_index_to_sqrt_price, try_apply_swap_fee, try_apply_transfer_fee, try_get_amount_delta_a, try_get_amount_delta_b, try_get_max_amount_with_slippage_tolerance, try_get_min_amount_with_slippage_tolerance, try_get_next_sqrt_price_from_a, try_get_next_sqrt_price_from_b, try_reverse_apply_swap_fee, try_reverse_apply_transfer_fee, AdaptiveFeeInfo, CoreError, ExactInSwapQuote, ExactInSwapQuoteSimulate, ExactOutSwapQuote, ExactOutSwapQuoteSimulate, FeeRateManager, OracleFacade, TickArraySequence, TickArrays, TickFacade, TransferFee, WhirlpoolFacade, AMOUNT_EXCEEDS_MAX_U64, ARITHMETIC_OVERFLOW, INVALID_ADAPTIVE_FEE_INFO, INVALID_SQRT_PRICE_LIMIT_DIRECTION, MAX_SQRT_PRICE, MIN_SQRT_PRICE, SQRT_PRICE_LIMIT_OUT_OF_BOUNDS, ZERO_TRADABLE_AMOUNT};
 
 #[cfg(feature = "wasm")]
 use orca_whirlpools_macros::wasm_expose;
@@ -447,6 +447,68 @@ pub fn swap_quote_by_input_token_simulate(
         token_in,
         token_est_out,
         token_min_out,
+        trade_fee: swap_result.trade_fee,
+        trade_fee_rate_min: swap_result.applied_fee_rate_min,
+        trade_fee_rate_max: swap_result.applied_fee_rate_max,
+        update_whirlpool: swap_result.whirlpool,
+    })
+}
+
+#[allow(clippy::too_many_arguments)]
+#[cfg_attr(feature = "wasm", wasm_expose)]
+pub fn swap_quote_by_output_token_simulate(
+    token_out: u64,
+    specified_token_a: bool,
+    slippage_tolerance_bps: u16,
+    whirlpool: WhirlpoolFacade,
+    oracle: Option<OracleFacade>,
+    tick_arrays: TickArrays,
+    timestamp: u64,
+    transfer_fee_a: Option<TransferFee>,
+    transfer_fee_b: Option<TransferFee>,
+) -> Result<ExactOutSwapQuoteSimulate, CoreError> {
+    let (transfer_fee_in, transfer_fee_out) = if specified_token_a {
+        (transfer_fee_b, transfer_fee_a)
+    } else {
+        (transfer_fee_a, transfer_fee_b)
+    };
+    let token_out_before_fee =
+        try_reverse_apply_transfer_fee(token_out, transfer_fee_out.unwrap_or_default())?;
+
+    let tick_sequence = TickArraySequence::new(tick_arrays.into(), whirlpool.tick_spacing)?;
+
+    let swap_result = compute_swap_with_state(
+        token_out_before_fee.into(),
+        0,
+        whirlpool,
+        tick_sequence,
+        !specified_token_a,
+        false,
+        timestamp,
+        oracle.map(|oracle| oracle.into()),
+    )?;
+
+    let (token_out_before_fee, token_est_in_after_fee) = if specified_token_a {
+        (swap_result.token_a, swap_result.token_b)
+    } else {
+        (swap_result.token_b, swap_result.token_a)
+    };
+
+    let token_out =
+        try_apply_transfer_fee(token_out_before_fee, transfer_fee_out.unwrap_or_default())?;
+
+    let token_est_in = try_reverse_apply_transfer_fee(
+        token_est_in_after_fee,
+        transfer_fee_in.unwrap_or_default(),
+    )?;
+
+    let token_max_in =
+        try_get_max_amount_with_slippage_tolerance(token_est_in, slippage_tolerance_bps)?;
+
+    Ok(ExactOutSwapQuoteSimulate {
+        token_out,
+        token_est_in,
+        token_max_in,
         trade_fee: swap_result.trade_fee,
         trade_fee_rate_min: swap_result.applied_fee_rate_min,
         trade_fee_rate_max: swap_result.applied_fee_rate_max,
