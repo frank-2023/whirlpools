@@ -5,6 +5,7 @@ use serde_big_array::BigArray;
 
 #[cfg(feature = "wasm")]
 use orca_whirlpools_macros::wasm_expose;
+use serde_big_array::BigArray;
 use serde::{Deserialize, Serialize};
 use crate::TICK_ARRAY_SIZE;
 
@@ -15,7 +16,7 @@ pub struct TickRange {
     pub tick_upper_index: i32,
 }
 
-#[derive(Copy, Clone, Debug, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[derive(Copy, Clone, Debug, Serialize, Deserialize, PartialEq, Eq, Default)]
 #[cfg_attr(feature = "wasm", wasm_expose)]
 pub struct TickFacade {
     pub initialized: bool,
@@ -27,10 +28,10 @@ pub struct TickFacade {
     pub reward_growths_outside: [u128; 3],
 }
 
-#[derive(Copy, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Copy, Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 #[cfg_attr(feature = "wasm", wasm_expose)]
 pub struct TickArrayFacade {
     pub start_tick_index: i32,
-    #[cfg_attr(feature = "wasm", serde(with = "BigArray"))]
+    #[serde(with = "BigArray")]
     pub ticks: [TickFacade; TICK_ARRAY_SIZE],
 }
