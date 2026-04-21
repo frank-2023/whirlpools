@@ -9,7 +9,7 @@ use super::{
     get_prev_initializable_tick_index,
 };
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, Copy)]
 pub struct TickArraySequence<const SIZE: usize> {
     pub tick_arrays: [Option<TickArrayFacade>; SIZE],
     pub tick_spacing: u16,
