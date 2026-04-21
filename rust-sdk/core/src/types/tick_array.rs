@@ -1,7 +1,7 @@
 use crate::types::TickArrayFacade;
 
 #[cfg(not(feature = "wasm"))]
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Copy)]
 pub enum TickArrays {
     One(TickArrayFacade),
     Two(TickArrayFacade, TickArrayFacade),
