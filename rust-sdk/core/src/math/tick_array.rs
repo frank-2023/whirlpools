@@ -75,6 +75,9 @@ impl<const SIZE: usize> TickArraySequence<SIZE> {
             as usize;
         let tick_array_start_index = start_tick_index(&self.tick_arrays[tick_array_index]);
         let tick_array_ticks = ticks(&self.tick_arrays[tick_array_index]);
+        if tick_array_ticks.len() == 0 {
+            return Err(TICK_SEQUENCE_EMPTY);
+        }
         let index_in_array = (tick_index - tick_array_start_index) / self.tick_spacing as i32;
         Ok(&tick_array_ticks[index_in_array as usize])
     }
